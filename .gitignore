@@ -1,0 +1,11 @@
+# Ignore ASK CLI state and configuration files
+ask-states.json
+.ask/
+
+# Ignore node modules
+node_modules/
+
+# Optional: Ignore any local debug files or IDE-specific files
+.DS_Store
+.vscode/
+.idea/
