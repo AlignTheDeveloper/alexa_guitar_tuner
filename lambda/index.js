@@ -174,7 +174,7 @@ const ErrorHandler = {
  * payloads to the handlers above. Make sure any new handlers or interceptors you've
  * defined are included below. The order matters - they're processed top to bottom 
  * */
-exports.handler = Alexa.SkillBuilders.custom()
+const skill = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         HelloWorldIntentHandler,
@@ -188,4 +188,10 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addErrorHandlers(
         ErrorHandler)
     .withCustomUserAgent('sample/hello-world/v1.2')
-    .lambda();
+    .create();
+
+const adapter = new ExpressAdapter(skill, false, false);
+const app = express();
+
+app.post('/', adapter.getRequestHandlers());
+app.listen(3036);
