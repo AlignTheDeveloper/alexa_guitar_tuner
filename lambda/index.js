@@ -194,4 +194,5 @@ const adapter = new ExpressAdapter(skill, false, false);
 const app = express();
 
 app.post('/', adapter.getRequestHandlers());
+app.use(express.static('public'))
 app.listen(3036);
