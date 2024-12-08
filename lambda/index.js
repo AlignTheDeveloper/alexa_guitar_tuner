@@ -4,7 +4,11 @@
  * session persistence, api calls, and more.
  * */
 const Alexa = require('ask-sdk-core');
+ const util = require('./util');
+ const express = require('express');
+ const { ExpressAdapter } = require('ask-sdk-express-adapter')
 
+app.use(express.static(__dirname + '/public'));
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
