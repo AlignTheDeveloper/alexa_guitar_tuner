@@ -1,156 +1,16 @@
-/**
- * Copyright 2020 Amazon.com, Inc. and its affiliates. All Rights Reserved.
- * SPDX-License-Identifier: LicenseRef-.amazon.com.-AmznSL-1.0
- *
- * Licensed under the Amazon Software License (the "License").
- * You may not use this file except in compliance with the License.
- * A copy of the License is located at
- *
- * http://aws.amazon.com/asl/
- *
- * or in the "license" file accompanying this file. This file is distributed
- * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied. See the License for the specific language governing
- * permissions and limitations under the License.
- **/
-
+/* *
+ * This sample demonstrates handling intents from an Alexa skill using the Alexa Skills Kit SDK (v2).
+ * Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
+ * session persistence, api calls, and more.
+ * */
 const Alexa = require('ask-sdk-core');
-const util = require('./util');
-const express = require('express');
-const { ExpressAdapter } = require('ask-sdk-express-adapter');
-/**
- * API Handler for RecordColor API
- *
- * @param handlerInput
- * @returns API response object
- *
- * See https://developer.amazon.com/en-US/docs/alexa/conversations/handle-api-calls.html
- */
-const RecordColorApiHandler = {
+
+const LaunchRequestHandler = {
     canHandle(handlerInput) {
-        return util.isApiRequest(handlerInput, 'RecordColor');
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        console.log("Api Request [RecordColor]: ", JSON.stringify(handlerInput.requestEnvelope.request, null, 2));
-        // First get our request entity and grab the color passed in the API call
-        const args = util.getApiArguments(handlerInput);
-        const color = args.color;
-        // Store the favorite color in the session
-        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-        sessionAttributes.favoriteColor = color;
-
-        return handlerInput.responseBuilder
-            .withApiResponse({
-                color: color
-            })
-            .withShouldEndSession(false)
-            .getResponse();
-    }
-}
-
-const IntroToAlexaConversationsButtonEventHandler = {
-    canHandle(handlerInput) {
-        console.log(JSON.stringify(handlerInput.requestEnvelope));
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'Alexa.Presentation.APL.UserEvent'
-            && handlerInput.requestEnvelope.request.arguments[0] === 'SetFavoriteColor';
-    },
-    handle(handlerInput) {
-        return handlerInput.responseBuilder
-            .addDirective({
-                type: 'Dialog.DelegateRequest',
-                target: 'AMAZON.Conversations',
-                period: {
-                    until: 'EXPLICIT_RETURN'
-                },
-                updatedRequest: {
-                    type: 'Dialog.InputRequest',
-                    input: {
-                        name: 'SpecifyFavoriteColor',
-                        slots: {
-                            'color': {
-                                name: 'color',
-                                value: handlerInput.requestEnvelope.request.arguments[1]
-                            }
-                        }
-                    }
-                }
-            })
-            .getResponse();
-    }
-}
-
-/**
- * API Handler for GetFavoriteColor API
- *
- * @param handlerInput
- * @returns API response object
- *
- * See https://developer.amazon.com/en-US/docs/alexa/conversations/handle-api-calls.html
- */
-const GetFavoriteColorApiHandler = {
-    canHandle(handlerInput) {
-        return util.isApiRequest(handlerInput, 'GetFavoriteColor');
-    },
-    handle(handlerInput) {
-        console.log("Api Request [GetFavoriteColor]: ", JSON.stringify(handlerInput.requestEnvelope.request, null, 2));
-
-        // Get the favorite color from the session
-        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-        if (sessionAttributes.favoriteColor) {
-            var color = sessionAttributes.favoriteColor;
-        }
-
-        return handlerInput.responseBuilder
-            .withApiResponse({
-                color: color
-            })
-            .withShouldEndSession(false)
-            .getResponse();
-    }
-}
-/**
- * FallbackIntentHandler - Handle all other requests to the skill
- *
- * @param handlerInput
- * @returns response
- *
- * See https://developer.amazon.com/en-US/docs/alexa/conversations/handle-api-calls.html
- */
-const FallbackIntentHandler = {
-    canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
-        return request.type === 'IntentRequest' && request.intent.name !== 'GetFavoriteColorApiHandler' && request.intent.name !== 'RecordColorApiHandler';
-    },
-    handle(handlerInput) {
-        const intentName = handlerInput.requestEnvelope.request.intent.name;
-        console.log('In catch all intent handler. Intent invoked: ' + intentName);
-        const speechOutput = "Hmm, I'm not sure. You can tell me your favorite color or ask me what your favorite color is. What would you like to do";
-
-        return handlerInput.responseBuilder
-            .speak(speechOutput)
-            .reprompt(speechOutput)
-            .getResponse();
-    },
-};
-const SessionEndedRequestHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
-    },
-    handle(handlerInput) {
-        // Any cleanup logic goes here.
-        return handlerInput.responseBuilder.getResponse();
-    }
-};
-// Generic error handling to capture any syntax or routing errors. If you receive an error
-// stating the request handler chain is not found, you have not implemented a handler for
-// the intent being invoked or included it in the skill builder below.
-const ErrorHandler = {
-    canHandle() {
-        return true;
-    },
-    handle(handlerInput, error) {
-        console.log(`~~~~ Error handled: ${error.stack}`);
-        const speakOutput = `Sorry, I had trouble doing what you asked. Please try again.`;
+        const speakOutput = 'Welcome to My Guitar Tuner. Please tell me which string you would like to tune.';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -158,39 +18,170 @@ const ErrorHandler = {
             .getResponse();
     }
 };
-// *****************************************************************************
-// These simple interceptors just log the incoming and outgoing request bodies to assist in debugging.
 
-const LogRequestInterceptor = {
-    process(handlerInput) {
-        console.log(`REQUEST ENVELOPE = ${JSON.stringify(handlerInput.requestEnvelope)}`);
+const HelloWorldIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'HelloWorldIntent';
     },
+    handle(handlerInput) {
+        const speakOutput = 'Hello World!';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .getResponse();
+    }
 };
 
-const LogResponseInterceptor = {
-    process(handlerInput, response) {
-        console.log(`RESPONSE = ${JSON.stringify(response)}`);
+const HelpIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
     },
+    handle(handlerInput) {
+        const speakOutput = 'You can say hello to me! How can I help?';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(speakOutput)
+            .getResponse();
+    }
 };
 
-// The SkillBuilder acts as the entry point for your skill, routing all request and response
-// payloads to the handlers above. Make sure any new handlers or interceptors you've
-// defined are included below. The order matters - they're processed top to bottom.
-const skill = Alexa.SkillBuilders.custom()
-   .addErrorHandlers(ErrorHandler)
-   .addRequestInterceptors(LogRequestInterceptor)
-   .addResponseInterceptors(LogResponseInterceptor)
-   .addRequestHandlers(
-       RecordColorApiHandler,
-       GetFavoriteColorApiHandler,
-       IntroToAlexaConversationsButtonEventHandler,
-       FallbackIntentHandler,
-       SessionEndedRequestHandler
-   )
-   .withCustomUserAgent('reference-skills/intro-to-alexa-conversations/v7')
-   .create();  
-const adapter = new ExpressAdapter(skill, false, false);
-const app = express();
+const ChooseStringIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'ChooseString';
+    },
+    handle(handlerInput) {
+        const string = Alexa.getSlotValue(handlerInput.requestEnvelope, 'guitar_string');
+        const speakOutput = 'The String you want to tune is ' + string;
+        
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
+    }
+}
 
-app.post('/', adapter.getRequestHandlers());
-app.listen(3036);
+const PlayReferenceIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'PlayReference';
+    },
+    handle(handlerInput) {
+        const speakOutput = 'Here is a reference sound';
+        
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
+    }
+}
+
+const CancelAndStopIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
+                || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
+    },
+    handle(handlerInput) {
+        const speakOutput = 'Goodbye!';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
+    }
+};
+/* *
+ * FallbackIntent triggers when a customer says something that doesn’t map to any intents in your skill
+ * It must also be defined in the language model (if the locale supports it)
+ * This handler can be safely added but will be ingnored in locales that do not support it yet 
+ * */
+const FallbackIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
+    },
+    handle(handlerInput) {
+        const speakOutput = 'Sorry, I don\'t know about that. Please try again.';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(speakOutput)
+            .getResponse();
+    }
+};
+/* *
+ * SessionEndedRequest notifies that a session was ended. This handler will be triggered when a currently open 
+ * session is closed for one of the following reasons: 1) The user says "exit" or "quit". 2) The user does not 
+ * respond or says something that does not match an intent defined in your voice model. 3) An error occurs 
+ * */
+const SessionEndedRequestHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
+    },
+    handle(handlerInput) {
+        console.log(`~~~~ Session ended: ${JSON.stringify(handlerInput.requestEnvelope)}`);
+        // Any cleanup logic goes here.
+        return handlerInput.responseBuilder.getResponse(); // notice we send an empty response
+    }
+};
+/* *
+ * The intent reflector is used for interaction model testing and debugging.
+ * It will simply repeat the intent the user said. You can create custom handlers for your intents 
+ * by defining them above, then also adding them to the request handler chain below 
+ * */
+const IntentReflectorHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest';
+    },
+    handle(handlerInput) {
+        const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+        const speakOutput = `You just triggered ${intentName}`;
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .getResponse();
+    }
+};
+/**
+ * Generic error handling to capture any syntax or routing errors. If you receive an error
+ * stating the request handler chain is not found, you have not implemented a handler for
+ * the intent being invoked or included it in the skill builder below 
+ * */
+const ErrorHandler = {
+    canHandle() {
+        return true;
+    },
+    handle(handlerInput, error) {
+        const speakOutput = 'Sorry, I had trouble doing what you asked. Please try again.';
+        console.log(`~~~~ Error handled: ${JSON.stringify(error)}`);
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(speakOutput)
+            .getResponse();
+    }
+};
+
+/**
+ * This handler acts as the entry point for your skill, routing all request and response
+ * payloads to the handlers above. Make sure any new handlers or interceptors you've
+ * defined are included below. The order matters - they're processed top to bottom 
+ * */
+exports.handler = Alexa.SkillBuilders.custom()
+    .addRequestHandlers(
+        LaunchRequestHandler,
+        HelloWorldIntentHandler,
+        HelpIntentHandler,
+        CancelAndStopIntentHandler,
+        ChooseStringIntentHandler,
+        PlayReferenceIntentHandler,
+        FallbackIntentHandler,
+        SessionEndedRequestHandler,
+        IntentReflectorHandler)
+    .addErrorHandlers(
+        ErrorHandler)
+    .withCustomUserAgent('sample/hello-world/v1.2')
+    .lambda();

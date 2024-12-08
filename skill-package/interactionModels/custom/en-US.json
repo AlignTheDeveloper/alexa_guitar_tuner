@@ -34,10 +34,68 @@
         {
           "name": "AMAZON.FallbackIntent",
           "samples": []
+        },
+        {
+          "slots": [
+            {
+              "name": "guitar_string",
+              "type": "guitar_string"
+            }
+          ],
+          "name": "ChooseString",
+          "samples": [
+            "lets tune the {guitar_string} string",
+            "tune the {guitar_string} string",
+            "help me tune the {guitar_string} string"
+          ]
+        },
+        {
+          "slots": [],
+          "name": "PlayReference",
+          "samples": [
+            "repeat the reference note",
+            "play the reference note"
+          ]
         }
       ],
-      "types": [],
-      "invocationName": "guitar tuner"
+      "types": [
+        {
+          "values": [
+            {
+              "name": {
+                "value": "Low E"
+              }
+            },
+            {
+              "name": {
+                "value": "B"
+              }
+            },
+            {
+              "name": {
+                "value": "G"
+              }
+            },
+            {
+              "name": {
+                "value": "D"
+              }
+            },
+            {
+              "name": {
+                "value": "A"
+              }
+            },
+            {
+              "name": {
+                "value": "High E"
+              }
+            }
+          ],
+          "name": "guitar_string"
+        }
+      ],
+      "invocationName": "brass tacks"
     }
   }
 }
