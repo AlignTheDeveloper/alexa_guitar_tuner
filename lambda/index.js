@@ -8,7 +8,6 @@ const Alexa = require('ask-sdk-core');
  const express = require('express');
  const { ExpressAdapter } = require('ask-sdk-express-adapter')
 
-app.use(express.static(__dirname + '/public'));
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
@@ -194,5 +193,5 @@ const adapter = new ExpressAdapter(skill, false, false);
 const app = express();
 
 app.post('/', adapter.getRequestHandlers());
-app.use(express.static('public'))
+app.use(express.static(__dirname + '/public'));
 app.listen(3036);
