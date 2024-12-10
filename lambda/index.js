@@ -22,32 +22,20 @@ const LaunchRequestHandler = {
     }
 };
 
-const HelloWorldIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'HelloWorldIntent';
-    },
-    handle(handlerInput) {
-        const speakOutput = 'Hello World!';
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
-            .getResponse();
-    }
-};
-
 const HelpIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'You can say hello to me! How can I help?';
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        const currentString = sessionAttributes.guitar_string || 'none';
+
+        const speakOutput = `This skill helps you tune your guitar. Currently, you have selected the ${currentString} string. You can ask me to play a reference sound or choose a different string.`;
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt('What would you like to do?')
             .getResponse();
     }
 };
@@ -59,13 +47,19 @@ const ChooseStringIntentHandler = {
     },
     handle(handlerInput) {
         const string = Alexa.getSlotValue(handlerInput.requestEnvelope, 'guitar_string');
-        const speakOutput = 'The String you want to tune is ' + string;
-        
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        sessionAttributes.guitar_string = string; // Save string to session attributes
+
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+        const speakOutput = `The string you want to tune is ${string}.`;
+
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .getResponse();
     }
 };
+
 
 const PlayReferenceIntentHandler = {
     canHandle(handlerInput) {
@@ -73,9 +67,24 @@ const PlayReferenceIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'PlayReference';
     },
     handle(handlerInput) {
-        const string = Alexa.getSlotValue(handlerInput.requestEnvelope, 'guitar_string').toLowerCase();
-        const sanitizedString = string.replace(' ', '%20'); // Replace spaces with %20 for URL compatibility
-        const audioUrl = `http://localhost:3036/audio/${sanitizedString}.mp3`;
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        let string = Alexa.getSlotValue(handlerInput.requestEnvelope, 'guitar_string');
+
+        // Fallback to session attributes if slot value is missing
+        if (!string && sessionAttributes.guitar_string) {
+            string = sessionAttributes.guitar_string;
+        }
+
+        if (!string) {
+            // Prompt user to specify the string if none is available
+            return handlerInput.responseBuilder
+                .speak('Which string would you like to hear?')
+                .reprompt('Please tell me which string to play.')
+                .getResponse();
+        }
+
+        const sanitizedString = string.replace(' ', '_'); // Replace spaces with underscores
+        const audioUrl = `https://alignthedeveloper.github.io/guitar-tuner-audio/audio/${sanitizedString}.mp3`;
         const speakOutput = `Here is the reference sound for the ${string} string.`;
 
         return handlerInput.responseBuilder
@@ -215,11 +224,12 @@ const ErrorHandler = {
 const skill = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
-        HelloWorldIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         ChooseStringIntentHandler,
         PlayReferenceIntentHandler,
+        CheckTuneIntentHandler,
+        TrackUsageIntentHandler,
         FallbackIntentHandler,
         SessionEndedRequestHandler,
         IntentReflectorHandler)
