@@ -260,4 +260,4 @@ const app = express();
 
 app.post('/', adapter.getRequestHandlers());
 app.use(express.static(__dirname + '/public'));
-app.listen(3036);
+exports.app = app;
