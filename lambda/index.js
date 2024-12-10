@@ -65,7 +65,7 @@ const ChooseStringIntentHandler = {
             .speak(speakOutput)
             .getResponse();
     }
-}
+};
 
 const PlayReferenceIntentHandler = {
     canHandle(handlerInput) {
@@ -73,13 +73,52 @@ const PlayReferenceIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'PlayReference';
     },
     handle(handlerInput) {
-        const speakOutput = 'Here is a reference sound';
+        const string = Alexa.getSlotValue(handlerInput.requestEnvelope, 'guitar_string').toLowerCase();
+        const sanitizedString = string.replace(' ', '%20'); // Replace spaces with %20 for URL compatibility
+        const audioUrl = `http://localhost:3036/audio/${sanitizedString}.mp3`;
+        const speakOutput = `Here is the reference sound for the ${string} string.`;
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .addAudioPlayerPlayDirective('REPLACE_ALL', audioUrl, string, 0, null)
+            .getResponse();
+    }
+};
+
+const CheckTuneIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'CheckTune';
+    },
+    handle(handlerInput) {
+        const speakOutput = 'It sounds like your tuning is getting better! Keep practicing.';
         
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .getResponse();
     }
-}
+};
+
+const TrackUsageIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'TrackUsage';
+    },
+    handle(handlerInput) {
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        sessionAttributes.usageCount = (sessionAttributes.usageCount || 0) + 1;
+
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+        const speakOutput = `You have used Guitar Tuner ${sessionAttributes.usageCount} times. Keep it up!`;
+        
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
+    }
+};
+
+
 
 const CancelAndStopIntentHandler = {
     canHandle(handlerInput) {
