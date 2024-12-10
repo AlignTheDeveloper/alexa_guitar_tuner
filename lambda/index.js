@@ -4,11 +4,11 @@
  * session persistence, api calls, and more.
  * */
 const Alexa = require('ask-sdk-core');
- const util = require('./util');
- const express = require('express');
- const { ExpressAdapter } = require('ask-sdk-express-adapter')
+const util = require('./util');
+const express = require('express');
+const { ExpressAdapter } = require('ask-sdk-express-adapter')
 
-const LaunchRequestHandler = {
+ const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
@@ -40,6 +40,8 @@ const HelpIntentHandler = {
     }
 };
 
+const validStrings = ["E", "A", "D", "G", "B", "high E", "low E"];
+
 const ChooseStringIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -47,18 +49,31 @@ const ChooseStringIntentHandler = {
     },
     handle(handlerInput) {
         const string = Alexa.getSlotValue(handlerInput.requestEnvelope, 'guitar_string');
-        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-        sessionAttributes.guitar_string = string; // Save string to session attributes
 
+        // Validate the string
+        if (!validStrings.includes(string)) {
+            const speakOutput = `I'm sorry, ${string} is not a valid guitar string. Please choose from low E, A, D, G, B, or high E.`;
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt('Please tell me which string you want to tune.')
+                .getResponse();
+        }
+
+        // Save the selected string to session attributes
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+        sessionAttributes.guitar_string = string;
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
-        const speakOutput = `The string you want to tune is ${string}.`;
+        const speakOutput = `The string you want to tune is ${string}. Would you like me to play the reference note?`;
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            .reprompt('Would you like me to play the reference note?')
             .getResponse();
     }
 };
+
+
 
 
 const PlayReferenceIntentHandler = {
@@ -68,31 +83,29 @@ const PlayReferenceIntentHandler = {
     },
     handle(handlerInput) {
         const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-        let string = Alexa.getSlotValue(handlerInput.requestEnvelope, 'guitar_string');
+        let string = sessionAttributes.guitar_string;
 
-        // Fallback to session attributes if slot value is missing
-        if (!string && sessionAttributes.guitar_string) {
-            string = sessionAttributes.guitar_string;
-        }
-
+        // If no string is selected, prompt the user
         if (!string) {
-            // Prompt user to specify the string if none is available
             return handlerInput.responseBuilder
-                .speak('Which string would you like to hear?')
-                .reprompt('Please tell me which string to play.')
+                .speak('I don’t know which string to play. Please tell me which string you want to tune.')
+                .reprompt('Please tell me which string you want to tune.')
                 .getResponse();
         }
 
-        const sanitizedString = string.replace(' ', '_'); // Replace spaces with underscores
+        // Generate the audio URL for the string
+        const sanitizedString = string.replace(' ', '_');
         const audioUrl = `https://alignthedeveloper.github.io/guitar-tuner-audio/audio/${sanitizedString}.mp3`;
         const speakOutput = `Here is the reference sound for the ${string} string.`;
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .addAudioPlayerPlayDirective('REPLACE_ALL', audioUrl, string, 0, null)
+            .reprompt('Please tell me which string you want to tune or ask me to repeat the reference note.')
             .getResponse();
     }
 };
+
 
 const CheckTuneIntentHandler = {
     canHandle(handlerInput) {
@@ -104,6 +117,7 @@ const CheckTuneIntentHandler = {
         
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            .reprompt('Please tell me which string you want to tune.')
             .getResponse();
     }
 };
@@ -123,6 +137,7 @@ const TrackUsageIntentHandler = {
         
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            .reprompt('What would you like to do next? You can choose a string to tune or exit the skill.')
             .getResponse();
     }
 };
@@ -154,14 +169,15 @@ const FallbackIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.FallbackIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'Sorry, I don\'t know about that. Please try again.';
+        const speakOutput = `Sorry, I didn't understand that. You can ask me to tune a string, play a reference note, or check how many times you've used this skill. What would you like to do?`;
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt('What would you like to do?')
             .getResponse();
     }
 };
+
 /* *
  * SessionEndedRequest notifies that a session was ended. This handler will be triggered when a currently open 
  * session is closed for one of the following reasons: 1) The user says "exit" or "quit". 2) The user does not 
@@ -206,12 +222,13 @@ const ErrorHandler = {
         return true;
     },
     handle(handlerInput, error) {
-        const speakOutput = 'Sorry, I had trouble doing what you asked. Please try again.';
-        console.log(`~~~~ Error handled: ${JSON.stringify(error)}`);
+        console.error(`~~~~ Error handled: ${JSON.stringify(error)}`);
+
+        const speakOutput = 'Sorry, something went wrong. You can ask me to tune a string, play a reference note, or check your usage stats.';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt('What would you like to do?')
             .getResponse();
     }
 };
